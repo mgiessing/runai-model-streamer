@@ -9,16 +9,25 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
     gcc-x86-64-linux-gnu g++-x86-64-linux-gnu binutils-x86-64-linux-gnu \
     gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu \
+    gcc-powerpc64le-linux-gnu g++-powerpc64le-linux-gnu binutils-powerpc64le-linux-gnu \
     && rm -rf /var/lib/apt/lists/* \
-    && ln -sf /usr/bin/aarch64-linux-gnu-ld.gold /usr/bin/ld.gold
+    && ln -sf /usr/bin/aarch64-linux-gnu-ld.gold /usr/bin/ld.gold \
+    && ln -sf /usr/bin/powerpc64le-linux-gnu-ld.gold /usr/bin/ld.gold
+
 
 RUN pip install \
     cpplint==1.5.4
 
 ARG BAZEL=4.2.1
-RUN ARCH=$([ "$(uname -m)" = "aarch64" ] && echo "arm64" || uname -m); \
-    wget -O /usr/local/bin/bazel "https://github.com/bazelbuild/bazel/releases/download/$BAZEL/bazel-$BAZEL-linux-$ARCH" && \
-    chmod +x /usr/local/bin/bazel
+RUN ARCH=$([ "$(uname -m)" = "ppc64le" ] && echo "ppc64le" || ([ "$(uname -m)" = "aarch64" ] && echo "arm64" || uname -m)); \
+    if [ "$ARCH" = "ppc64le" ]; then \
+        apt-get install openjdk-8-jdk -y; \
+        wget -O /usr/local/bin/bazel "http://x3650m3-1.power-lab.de.ibm.com/bazel/el7/bazel-$BAZEL"; \
+        chmod +x /usr/local/bin/bazel; \
+    else \
+        wget -O /usr/local/bin/bazel "https://github.com/bazelbuild/bazel/releases/download/$BAZEL/bazel-$BAZEL-linux-$ARCH"; \
+        chmod +x /usr/local/bin/bazel; \
+    fi
 
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
     cmake \
@@ -38,7 +47,13 @@ RUN curl -fsSL -o openssl-1.1.1o.tar.gz https://www.openssl.org/source/openssl-1
         make clean > /dev/null && \
         make distclean > /dev/null && \
 
-    ./Configure no-ssl2 no-zlib no-shared no-comp no-dynamic-engine enable-ec_nistp_64_gcc_128 --cross-compile-prefix=/usr/bin/aarch64-linux-gnu- --prefix=/opt/aarch64-ssl --openssldir=/opt/aarch64-ssl linux-aarch64 && \
+        ./Configure no-ssl2 no-zlib no-shared no-comp no-dynamic-engine enable-ec_nistp_64_gcc_128 --cross-compile-prefix=/usr/bin/aarch64-linux-gnu- --prefix=/opt/aarch64-ssl --openssldir=/opt/aarch64-ssl linux-aarch64 && \
+        make -j4 > /dev/null && \
+        make install_sw > /dev/null && \
+        make clean > /dev/null && \
+        make distclean > /dev/null && \
+
+        ./Configure no-ssl2 no-zlib no-shared no-comp no-dynamic-engine enable-ec_nistp_64_gcc_128 --cross-compile-prefix=/usr/bin/powerpc64le-linux-gnu- --prefix=/opt/ppc64le-ssl --openssldir=/opt/ppc64le-ssl linux-ppc64le && \
         make -j4 > /dev/null && \
         make install_sw > /dev/null && \
         make clean > /dev/null && \
@@ -73,6 +88,17 @@ RUN curl -fsSL -o curl-7.83.1.tar.gz https://github.com/curl/curl/releases/downl
         make install > /dev/null && \
         make clean > /dev/null && \
 
+        AR=/usr/bin/powerpc64le-linux-gnu-ar \
+        AS=/usr/bin/powerpc64le-linux-gnu-as \
+        LD=/usr/bin/powerpc64le-linux-gnu-ld \
+        RANLIB=/usr/bin/powerpc64le-linux-gnu-ranlib \
+        CC=/usr/bin/powerpc64le-linux-gnu-gcc \
+        NM=/usr/bin/powerpc64le-linux-gnu-nm \
+        ./configure --host=x86_64-linux-gnu --build=powerpc64le-linux-gnu --disable-shared --with-openssl=/opt/ppc64le-ssl --prefix=/opt/ppc64le-curl && \
+            make -j4 > /dev/null && \
+            make install > /dev/null && \
+            make clean > /dev/null && \
+
     cd - && \
     rm -rf curl-7.83.1 curl-7.83.1.tar.gz
 
@@ -101,10 +127,22 @@ RUN curl -fsSL -o zlib-1.3.1.tar.gz https://github.com/madler/zlib/releases/down
         make -j4 > /dev/null && \
         make install > /dev/null && \
         make clean > /dev/null && \
+
+    AR=/usr/bin/powerpc64le-linux-gnu-ar \
+    AS=/usr/bin/powerpc64le-linux-gnu-as \
+    LD=/usr/bin/powerpc64le-linux-gnu-ld \
+    RANLIB=/usr/bin/powerpc64le-linux-gnu-ranlib \
+    CC=/usr/bin/powerpc64le-linux-gnu-gcc \
+    NM=/usr/bin/powerpc64le-linux-gnu-nm \
+    ./configure --static --prefix=/opt/ppc64le-zlib && \
+        make -j4 > /dev/null && \
+        make install > /dev/null && \
+        make clean > /dev/null && \
     cd - && \
     rm -rf zlib-1.3.1 zlib-1.3.1.tar.gz
 
 ADD aarch64-linux-gnu.cmake /opt/toolchains/aarch64-linux-gnu.cmake
+ADD ppc64le-linux-gnu.cmake /opt/toolchains/ppc64le-linux-gnu.cmake
 ADD x86_64-linux-gnu.cmake /opt/toolchains/x86_64-linux-gnu.cmake
 RUN git clone --recurse-submodules --depth 1 --branch "1.11.321" https://github.com/aws/aws-sdk-cpp /opt/aws-sdk-cpp && \
     cd /opt/aws-sdk-cpp && \
@@ -147,6 +185,28 @@ RUN git clone --recurse-submodules --depth 1 --branch "1.11.321" https://github.
           -DCURL_INCLUDE_DIR="/opt/aarch64-curl/include" \
           -DOPENSSL_CRYPTO_LIBRARY="/opt/aarch64-ssl/lib/libssl.a" \
           -DOPENSSL_INCLUDE_DIR="/opt/aarch64-ssl/include" && \
+    make -j4 && \
+    make install && \
+
+    make clean && \
+    rm -rf CMakeCache.txt && \
+    
+    cmake -DCMAKE_TOOLCHAIN_FILE=/opt/toolchains/ppc64le-linux-gnu.cmake \
+          -DBUILD_ONLY="s3-crt" \
+          -DCMAKE_PREFIX_PATH="/opt/ppc64le-ssl;/opt/ppc64le-curl" \
+          -DCMAKE_INSTALL_PREFIX="/opt/ppc64le-aws" \
+          -DFORCE_SHARED_CRT=OFF \
+          -DBUILD_SHARED_LIBS=OFF \
+          -DENABLE_TESTING=OFF \
+          -DAUTORUN_UNIT_TESTS=OFF \
+          -DZLIB_LIBRARY="/opt/ppc64le-zlib/lib/libz.a" \
+          -DZLIB_INCLUDE_DIR="/opt/ppc64le-zlib/include" \
+          -Dcrypto_LIBRARY="/opt/ppc64le-ssl/lib/libcrypto.a" \
+          -Dcrypto_INCLUDE_DIR="/opt/ppc64le-ssl/include" \
+          -DCURL_LIBRARY="/opt/ppc64le-curl/lib/libcurl.a" \
+          -DCURL_INCLUDE_DIR="/opt/ppc64le-curl/include" \
+          -DOPENSSL_CRYPTO_LIBRARY="/opt/ppc64le-ssl/lib/libssl.a" \
+          -DOPENSSL_INCLUDE_DIR="/opt/ppc64le-ssl/include" && \
     make -j4 && \
     make install && \
     rm -rf /opt/aws-sdk-cpp

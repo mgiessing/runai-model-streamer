@@ -1,7 +1,8 @@
-load("//toolchain:rules.bzl", "runai_cc_configure_toolchain", "runai_cc_autoconf_impl_x86", "runai_cc_autoconf_impl_arm64")
+load("//toolchain:rules.bzl", "runai_cc_configure_toolchain", "runai_cc_autoconf_impl_x86", "runai_cc_autoconf_impl_arm64", "runai_cc_autoconf_impl_ppc64le")
 
 runai_cc_configure_toolchain("x86_64", runai_cc_autoconf_impl_x86)
 runai_cc_configure_toolchain("aarch64", runai_cc_autoconf_impl_arm64)
+runai_cc_configure_toolchain("ppc64le", runai_cc_autoconf_impl_ppc64le)
 
 new_local_repository(
     name = "aws",
