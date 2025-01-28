@@ -22,7 +22,7 @@ ARG BAZEL=4.2.1
 RUN ARCH=$([ "$(uname -m)" = "ppc64le" ] && echo "ppc64le" || ([ "$(uname -m)" = "aarch64" ] && echo "arm64" || uname -m)); \
     if [ "$ARCH" = "ppc64le" ]; then \
         apt-get install openjdk-8-jdk -y; \
-        wget -O /usr/local/bin/bazel "http://x3650m3-1.power-lab.de.ibm.com/bazel/el7/bazel-$BAZEL"; \
+        wget -O /usr/local/bin/bazel "https://ftp2.osuosl.org/pub/ppc64el/bazel/el8/bazel-$BAZEL"; \
         chmod +x /usr/local/bin/bazel; \
     else \
         wget -O /usr/local/bin/bazel "https://github.com/bazelbuild/bazel/releases/download/$BAZEL/bazel-$BAZEL-linux-$ARCH"; \

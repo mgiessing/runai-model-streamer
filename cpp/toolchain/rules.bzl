@@ -104,3 +104,8 @@ def runai_cc_autoconf_impl_arm64(ctx):
     toolchain_name = "aarch64-linux-gnu-"
     tools = runai_crosstool_tools(toolchain_name)
     return cc_autoconf_impl(ctx, overriden_tools = tools) 
+
+def runai_cc_autoconf_impl_ppc64le(ctx):
+    toolchain_name = "powerpc64le-linux-gnu-"
+    tools = runai_crosstool_tools(toolchain_name)
+    return cc_autoconf_impl(ctx, overriden_tools = tools) 
