@@ -47,7 +47,7 @@ RUN curl -fsSL -o openssl-1.1.1o.tar.gz https://www.openssl.org/source/openssl-1
         make clean > /dev/null && \
         make distclean > /dev/null && \
 
-        ./Configure no-ssl2 no-zlib no-shared no-comp no-dynamic-engine enable-ec_nistp_64_gcc_128 --cross-compile-prefix=/usr/bin/aarch64-linux-gnu- --prefix=/opt/aarch64-ssl --openssldir=/opt/aarch64-ssl linux-aarch64 && \
+    ./Configure no-ssl2 no-zlib no-shared no-comp no-dynamic-engine enable-ec_nistp_64_gcc_128 --cross-compile-prefix=/usr/bin/aarch64-linux-gnu- --prefix=/opt/aarch64-ssl --openssldir=/opt/aarch64-ssl linux-aarch64 && \
         make -j4 > /dev/null && \
         make install_sw > /dev/null && \
         make clean > /dev/null && \
@@ -88,16 +88,16 @@ RUN curl -fsSL -o curl-7.83.1.tar.gz https://github.com/curl/curl/releases/downl
         make install > /dev/null && \
         make clean > /dev/null && \
 
-        AR=/usr/bin/powerpc64le-linux-gnu-ar \
-        AS=/usr/bin/powerpc64le-linux-gnu-as \
-        LD=/usr/bin/powerpc64le-linux-gnu-ld \
-        RANLIB=/usr/bin/powerpc64le-linux-gnu-ranlib \
-        CC=/usr/bin/powerpc64le-linux-gnu-gcc \
-        NM=/usr/bin/powerpc64le-linux-gnu-nm \
-        ./configure --host=x86_64-linux-gnu --build=powerpc64le-linux-gnu --disable-shared --with-openssl=/opt/ppc64le-ssl --prefix=/opt/ppc64le-curl && \
-            make -j4 > /dev/null && \
-            make install > /dev/null && \
-            make clean > /dev/null && \
+    AR=/usr/bin/powerpc64le-linux-gnu-ar \
+    AS=/usr/bin/powerpc64le-linux-gnu-as \
+    LD=/usr/bin/powerpc64le-linux-gnu-ld \
+    RANLIB=/usr/bin/powerpc64le-linux-gnu-ranlib \
+    CC=/usr/bin/powerpc64le-linux-gnu-gcc \
+    NM=/usr/bin/powerpc64le-linux-gnu-nm \
+    ./configure --host=x86_64-linux-gnu --build=powerpc64le-linux-gnu --disable-shared --with-openssl=/opt/ppc64le-ssl --prefix=/opt/ppc64le-curl && \
+        make -j4 > /dev/null && \
+        make install > /dev/null && \
+        make clean > /dev/null && \
 
     cd - && \
     rm -rf curl-7.83.1 curl-7.83.1.tar.gz
@@ -142,7 +142,7 @@ RUN curl -fsSL -o zlib-1.3.1.tar.gz https://github.com/madler/zlib/releases/down
     rm -rf zlib-1.3.1 zlib-1.3.1.tar.gz
 
 ADD aarch64-linux-gnu.cmake /opt/toolchains/aarch64-linux-gnu.cmake
-ADD ppc64le-linux-gnu.cmake /opt/toolchains/ppc64le-linux-gnu.cmake
+ADD powerpc64le-linux-gnu.cmake /opt/toolchains/powerpc64le-linux-gnu.cmake
 ADD x86_64-linux-gnu.cmake /opt/toolchains/x86_64-linux-gnu.cmake
 RUN git clone --recurse-submodules --depth 1 --branch "1.11.321" https://github.com/aws/aws-sdk-cpp /opt/aws-sdk-cpp && \
     cd /opt/aws-sdk-cpp && \
